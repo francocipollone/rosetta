@@ -194,17 +194,21 @@ def _dec_image(msg, spec):
 
 @register_decoder("std_msgs/msg/Float32MultiArray")
 def _dec_f32(msg, spec):
-    """Float32MultiArray decoder: try dotted names first, then use data field."""
-    if spec.names:
-        return _decode_via_names(msg, spec.names)
+    """Float32MultiArray decoder: return data array directly.
+    
+    Note: spec.names are just output labels, not extraction paths.
+    Float64MultiArray has a flat data array without named fields.
+    """
     return np.asarray(msg.data, dtype=np.float32)
 
 
 @register_decoder("std_msgs/msg/Float64MultiArray")
 def _dec_f64(msg, spec):
-    """Float64MultiArray decoder: try dotted names first, then use data field."""
-    if spec.names:
-        return _decode_via_names(msg, spec.names)
+    """Float64MultiArray decoder: return data array directly.
+    
+    Note: spec.names are just output labels, not extraction paths.
+    Float64MultiArray has a flat data array without named fields.
+    """
     return np.asarray(msg.data, dtype=np.float64)
 
 
