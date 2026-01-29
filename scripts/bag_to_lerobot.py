@@ -555,6 +555,13 @@ def export_bags_to_lerobot(
                         stream_val = resampled.get(unique_key, [None] * n_ticks)[i]
                         if stream_val is not None:
                             val_array = np.asarray(stream_val, dtype=np.float32).reshape(-1)
+                            
+                            # Apply unit conversion from contract spec
+                            if sv.unit_conversion == "rad2deg":
+                                val_array = np.rad2deg(val_array)
+                            elif sv.unit_conversion == "deg2rad":
+                                val_array = np.deg2rad(val_array)
+                                
                             action_values.append(val_array)
                     
                     if action_values:

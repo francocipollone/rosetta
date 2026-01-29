@@ -66,7 +66,7 @@ class ActionSpec:
             qos: { reliability: best_effort, history: keep_last, depth: 10 }
             strategy: { mode: nearest, tolerance_ms: 500 }
           selector: { names: [linear.x, angular.z] }
-          from_tensor: { clamp: [-2.0, 2.0] }
+          from_tensor: { clamp: [-2.0, 2.0], unit_conversion: rad2deg }
           safety_behavior: hold
     """
 
@@ -78,6 +78,7 @@ class ActionSpec:
     publish_qos: Optional[Dict[str, Any]] = None
     publish_strategy: Optional[Dict[str, Any]] = None
     safety_behavior: str = "zeros"  # "zeros" | "hold"
+    unit_conversion: Optional[str] = None  # "rad2deg" | "deg2rad" | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +138,14 @@ def load_contract(path: Path | str) -> Contract:
         sb = str(it.get("safety_behavior", "zeros")).lower().strip()
         if sb not in ("zeros", "hold"):
             sb = "zeros"
+        # Read unit_conversion from from_tensor (e.g., "rad2deg", "deg2rad")
+        ft = it.get("from_tensor") or {}
+        uc = ft.get("unit_conversion")
+        if uc:
+            uc = str(uc).lower().strip()
+            if uc not in ("rad2deg", "deg2rad"):
+                print(f"[WARN] Unknown unit_conversion '{uc}', ignoring")
+                uc = None
         return ActionSpec(
             key=it["key"],
             publish_topic=pub["topic"],
@@ -146,6 +155,7 @@ def load_contract(path: Path | str) -> Contract:
             publish_qos=pub.get("qos"),
             publish_strategy=pub.get("strategy"),
             safety_behavior=sb,
+            unit_conversion=uc,
         )
 
     def _task(it: Dict[str, Any]) -> TaskSpec:
@@ -199,6 +209,7 @@ class SpecView:
     stamp_src: str
     clamp: Optional[Tuple[float, float]]  # actions only
     safety_behavior: Optional[str]  # actions only: "zeros" | "hold"
+    unit_conversion: Optional[str] = None  # "rad2deg" | "deg2rad" | None
 
 
 def _num_channels_from_encoding(encoding: str) -> int:
@@ -288,6 +299,7 @@ def iter_specs(contract: Contract) -> Iterable[SpecView]:
             stamp_src=al.stamp,
             clamp=None,
             safety_behavior=None,
+            unit_conversion=None,
         )
 
     # Actions
@@ -312,6 +324,7 @@ def iter_specs(contract: Contract) -> Iterable[SpecView]:
             stamp_src=contract.timestamp_source,
             clamp=clamp,
             safety_behavior=(a.safety_behavior or "zeros").lower(),
+            unit_conversion=a.unit_conversion,
         )
 
 
