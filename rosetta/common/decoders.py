@@ -200,6 +200,14 @@ def _dec_f32(msg, spec):
     return np.asarray(msg.data, dtype=np.float32)
 
 
+@register_decoder("std_msgs/msg/Float64MultiArray")
+def _dec_f64(msg, spec):
+    """Float64MultiArray decoder: try dotted names first, then use data field."""
+    if spec.names:
+        return _decode_via_names(msg, spec.names)
+    return np.asarray(msg.data, dtype=np.float64)
+
+
 @register_decoder("std_msgs/msg/Int32MultiArray")
 def _dec_i32(msg, spec):
     """Int32MultiArray decoder: try dotted names first, then use data field."""
