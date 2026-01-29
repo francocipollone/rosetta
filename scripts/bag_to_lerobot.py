@@ -545,12 +545,12 @@ def export_bags_to_lerobot(
                     # Use zero padding if no state values available
                     frame["observation.state"] = zero_pad_map["observation.state"]
             
-            # Handle consolidated action specs by concatenating multiple action streams
-            for action_key, action_specs in action_specs_by_key.items():
-                if len(action_specs) > 1 and action_key in features:
+            # Handle action specs (single or multiple) by concatenating action streams
+            for action_key, action_specs_list in action_specs_by_key.items():
+                if action_key in features:
                     # Concatenate all action values from different topics
                     action_values = []
-                    for sv in action_specs:
+                    for sv in action_specs_list:
                         unique_key = f"{sv.key}_{sv.topic.replace('/', '_')}"
                         stream_val = resampled.get(unique_key, [None] * n_ticks)[i]
                         if stream_val is not None:
@@ -571,8 +571,8 @@ def export_bags_to_lerobot(
                 if name == "observation.state":
                     continue
                 
-                # Skip consolidated actions as they're handled above
-                if name in action_specs_by_key and len(action_specs_by_key[name]) > 1: #TODO: I think this can just be if name == "action"
+                # Skip actions as they're handled above
+                if name in action_specs_by_key:
                     continue
                     
                 ft = features[name]
