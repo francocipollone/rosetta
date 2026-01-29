@@ -368,7 +368,7 @@ class EpisodeRecorderServer(Node):
     def _register_topic(self, topic: str, type_str: str) -> None:
         """Register a topic with the active writer (idempotent per writer)."""
         meta = rosbag2_py.TopicMetadata(
-            name=topic, type=type_str, serialization_format="cdr"
+            id=0, name=topic, type=type_str, serialization_format="cdr"
         )
         assert self._ws.writer is not None
         self._ws.writer.create_topic(meta)
@@ -548,9 +548,8 @@ class EpisodeRecorderServer(Node):
         RecordEpisode.Result
             Success flag and summary message.
         """
-        # Store goal handle and transition to EXECUTING state
+        # Store goal handle and reset flags (but don't set is_recording yet)
         self._current_goal_handle = goal_handle
-        self._flags.is_recording = True
         self._flags.fatal_error = False
         self._flags.stop_requested = False
         for k in list(self._ws.counts.keys()):
@@ -573,8 +572,9 @@ class EpisodeRecorderServer(Node):
                 self._ws.writer = self._open_writer(str(bag_dir), storage)
                 for t, typ, _ in self._topics:
                     self._register_topic(t, typ)
+                # Only enable recording after writer is ready and all topics registered
+                self._flags.is_recording = True
         except (RuntimeError, OSError, ValueError) as exc:
-            self._flags.is_recording = False
             self._current_goal_handle = None
             goal_handle.abort()
             msg = f"Failed to open writer: {exc!r}"
